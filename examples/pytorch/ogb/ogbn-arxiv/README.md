@@ -16,7 +16,7 @@ where pv is GAT prediction vector of node v and E' is a sampled subset of E.
 
 ```shell
 pip install -r requirements.txt
-python -u gat.py --n-label-iters=1 --dropout=0.75 --input-drop=0.25 --edge-drop=0.3 --gpu=0 --version=gat_topo
+python -u gat.py --gpu=0 --n-label-iters=1 --dropout=0.75 --input-drop=0.25 --edge-drop=0.3 --topo-mask-threshold=0.2 --topo-loss-ratio=1.0 --version=gat_topo
 ```
 
 Training log and performance will be written into file "./log/[version]_[time_stamp]/log"

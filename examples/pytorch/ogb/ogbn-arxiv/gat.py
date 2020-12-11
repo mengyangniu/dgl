@@ -120,7 +120,7 @@ def train(model, graph, labels, train_idx, val_idx, test_idx, optimizer, use_lab
     pred = model(graph, feat)
 
     # randomly sample edges to calculate topology consistency
-    mask = torch.randn(graph.num_edges(), device=pred.device) < 0.2
+    mask = torch.randn(graph.num_edges(), device=pred.device) < args.topo_mask_threshold
     srcs = torch.masked_select(graph.edges()[0], mask)
     dsts = torch.masked_select(graph.edges()[1], mask)
     pred_srcs = pred[srcs]
@@ -194,7 +194,7 @@ def run(args, graph, labels, train_idx, val_idx, test_idx, evaluator, n_running,
 
         adjust_learning_rate(optimizer, args.lr, epoch)
 
-        ce_loss, pred, structloss = train(
+        ce_loss, pred, topo_loss = train(
             model, graph, labels, train_idx, val_idx, test_idx, optimizer, args.use_labels,
             args.n_label_iters, args
         )
@@ -215,7 +215,7 @@ def run(args, graph, labels, train_idx, val_idx, test_idx, evaluator, n_running,
         if epoch % args.log_every == 0:
             log_file.write(f"Run: {n_running}/{args.n_runs}, Epoch: {epoch}/{args.n_epochs}\n")
             log_file.write(
-                f"CELoss: {ce_loss:.4f}, Struct: {structloss:.4f}, Acc: {acc:.4f}\n"
+                f"CELoss: {ce_loss:.4f}, TopoLoss: {topo_loss:.4f}, Acc: {acc:.4f}\n"
                 f"Train/Val/Test loss: {train_loss:.4f}/{val_loss:.4f}/{test_loss:.4f}\n"
                 f"Train/Val/Test/Best val/Best test acc: {train_acc:.4f}/{val_acc:.4f}/{test_acc:.4f}/{best_val_acc:.4f}/{best_test_acc:.4f}\n"
             )
@@ -301,6 +301,7 @@ def main():
     argparser.add_argument("--no-attn-dst", type=str2bool, default=True)
     argparser.add_argument("--use-norm", type=str2bool, default=True)
     argparser.add_argument('--topo-loss-ratio', type=float, default=1.0)
+    argparser.add_argument('--topo-mask-threshold', type=float, default=0.2)
 
     argparser.add_argument("--n-layers", type=int, help="number of layers", default=3)
     argparser.add_argument("--n-heads", type=int, help="number of heads", default=3)
@@ -383,7 +384,7 @@ if __name__ == "__main__":
 
 """
 Run this file with command: 
-python -u gat.py --n-label-iters=1 --dropout=0.75 --input-drop=0.25 --edge-drop=0.3 --gpu=0 --version=gat_topo
+python -u gat.py --gpu=0 --n-label-iters=1 --dropout=0.75 --input-drop=0.25 --edge-drop=0.3 --topo-mask-threshold=0.2 --topo-loss-ratio=1.0 --version=gat_topo
 
 Final result:
 Val Accs: [0.7520386590154032, 0.7520386590154032, 0.7498573777643545, 0.7533474277660324, 0.7516359609382866, 0.7510990301687976, 0.7505285412262156, 0.7508976811302392, 0.7508976811302392, 0.7509983556495184]
