@@ -1,107 +1,44 @@
-# DGL examples for ogbn-arxiv
+# GAT+label+reuse+topo loss OGB submission
 
-Requires DGL 0.5 or later versions.
+This repository contains the code to reproduce the performance of "GAT+label+reuse+topo" on ogbn-arxiv dataset.Most code of this repo is modified based on [DGL example](https://github.com/dmlc/dgl/tree/master/examples/pytorch/ogb/ogbn-arxiv) and [Espylapiza's GAT implement](https://github.com/Espylapiza/dgl/tree/master/examples/pytorch/ogb/ogbn-arxiv). 
 
-### GCN
+Many tricks that we use include 'reuse' please refer to [Espylapiza's GAT implement](https://github.com/Espylapiza/dgl/tree/master/examples/pytorch/ogb/ogbn-arxiv). Most hyperparameters follows the setting of previous works, hyperparameters about 'topo loss' were hand tuned. All experiments were runned with a Tesla V100 with 16GB memory.
 
-For the best score, run `gcn.py` with `--use-linear` and `--use-labels` enabled and you should directly see the result.
+## topo loss
 
-```bash
-python3 gcn.py --use-linear --use-labels
+When training GAT model, we observed that node prediction has a large variance among training epochs. We proposed topo loss in order to stabilize graph model training. Givin a Graph G=(V,E) with n nodes V=[v1,v2,...,vn] and m edges E=[e1,e2,...,em]. ei=<vis,vid>$ where vis is the source node and vid is the destination node. Topo loss can be expressed as 
+
+<img src="http://chart.googleapis.com/chart?cht=tx&chl= \mathcal{L}_{topo}=\frac{1}{|E'|}\sum_{i\in E'}\cos(p_{v_i^s},p_{v_i^d})" style="border:none;">
+
+where pv is GAT prediction vector of node v and E' is a sampled subset of E.
+
+## usage
+
+```shell
+pip install -r requirements.txt
+python -u gat.py --n-label-iters=1 --dropout=0.75 --input-drop=0.25 --edge-drop=0.3 --gpu=0 --version=gat_topo
 ```
 
-### GAT
+Training log and performance will be written into file "./log/[version]_[time_stamp]/log"
 
-For the score of `GAT(norm. adj.)+labels`, run the following command and you should directly see the result.
+## result
 
-```bash
-python3 gat.py --use-norm --use-labels --no-attn-dst --edge-drop=0.1 --input-drop=0.1
-```
-
-For the score of `GAT(norm. adj.)+label reuse`, run the following command and you should directly see the result.
-
-```bash
-python3 gat.py --use-norm --use-labels --n-label-iters=1 --no-attn-dst --edge-drop=0.3 --input-drop=0.25
-```
-
-For the score of `GAT(norm. adj.)+label reuse+C&S`, run the following command and you should directly see the result.
-
-```bash
-python3 gat.py --use-norm --use-labels --n-label-iters=1 --no-attn-dst --edge-drop=0.3 --input-drop=0.25 --save-pred
-python3 correct_and_smooth.py --use-norm
-```
-
-## Usage & Options
-
-### GCN
+To validate the reproduction of this repo, we first randomly use seed 42 at first,  and the result:
 
 ```
-usage: GCN on OGBN-Arxiv [-h] [--cpu] [--gpu GPU] [--n-runs N_RUNS] [--n-epochs N_EPOCHS] [--use-labels] [--use-linear] [--lr LR] [--n-layers N_LAYERS] [--n-hidden N_HIDDEN]
-                         [--dropout DROPOUT] [--wd WD] [--log-every LOG_EVERY] [--plot-curves]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --cpu                 CPU mode. This option overrides --gpu. (default: False)
-  --gpu GPU             GPU device ID. (default: 0)
-  --n-runs N_RUNS       running times (default: 10)
-  --n-epochs N_EPOCHS   number of epochs (default: 1000)
-  --use-labels          Use labels in the training set as input features. (default: False)
-  --use-linear          Use linear layer. (default: False)
-  --lr LR               learning rate (default: 0.005)
-  --n-layers N_LAYERS   number of layers (default: 3)
-  --n-hidden N_HIDDEN   number of hidden units (default: 256)
-  --dropout DROPOUT     dropout rate (default: 0.75)
-  --wd WD               weight decay (default: 0)
-  --log-every LOG_EVERY
-                        log every LOG_EVERY epochs (default: 20)
-  --plot-curves         plot learning curves (default: False)
+Val Accs:, [0.7514346118997282, 0.7514010537266351, 0.7509983556495184, 0.7520722171884963, 0.7505620993993087, 0.7514681700728212, 0.7522064498808685, 0.7523406825732407, 0.750729890264774, 0.7510654719957045]
+Test Accs: [0.7384317840462523, 0.7397485751908318, 0.7407155936876324, 0.7413945641215562, 0.7408184679958028, 0.7386169578009588, 0.7408390428574367, 0.7423615826183569, 0.7400571981153427, 0.7398308746373681]
+Average val accuracy: 0.7514 ± 0.0006
+Average test accuracy: 0.7403 ± 0.0011
+Number of params: 1441580
 ```
 
-### GAT
+Then we follow the instruction of OGB rules and set the random seed from 0~9 and get the following result:
 
 ```
-usage: GAT on OGBN-Arxiv [-h] [--cpu] [--gpu GPU] [--n-runs N_RUNS] [--n-epochs N_EPOCHS] [--use-labels] [--n-label-iters N_LABEL_ITERS] [--no-attn-dst]
-                         [--use-norm] [--lr LR] [--n-layers N_LAYERS] [--n-heads N_HEADS] [--n-hidden N_HIDDEN] [--dropout DROPOUT] [--input-drop INPUT_DROP]
-                         [--attn-drop ATTN_DROP] [--edge-drop EDGE_DROP] [--wd WD] [--log-every LOG_EVERY] [--plot-curves]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --cpu                 CPU mode. This option overrides --gpu. (default: False)
-  --gpu GPU             GPU device ID. (default: 0)
-  --n-runs N_RUNS       running times (default: 10)
-  --n-epochs N_EPOCHS   number of epochs (default: 2000)
-  --use-labels          Use labels in the training set as input features. (default: False)
-  --n-label-iters N_LABEL_ITERS
-                        number of label iterations (default: 0)
-  --no-attn-dst         Don't use attn_dst. (default: False)
-  --use-norm            Use symmetrically normalized adjacency matrix. (default: False)
-  --lr LR               learning rate (default: 0.002)
-  --n-layers N_LAYERS   number of layers (default: 3)
-  --n-heads N_HEADS     number of heads (default: 3)
-  --n-hidden N_HIDDEN   number of hidden units (default: 250)
-  --dropout DROPOUT     dropout rate (default: 0.75)
-  --input-drop INPUT_DROP
-                        input drop rate (default: 0.1)
-  --attn-drop ATTN_DROP
-                        attention dropout rate (default: 0.0)
-  --edge-drop EDGE_DROP
-                        edge drop rate (default: 0.0)
-  --wd WD               weight decay (default: 0)
-  --log-every LOG_EVERY
-                        log every LOG_EVERY epochs (default: 20)
-  --plot-curves         plot learning curves (default: False)
+Val Accs: [0.7520386590154032, 0.7520386590154032, 0.7498573777643545, 0.7533474277660324, 0.7516359609382866, 0.7510990301687976, 0.7505285412262156, 0.7508976811302392, 0.7508976811302392, 0.7509983556495184]
+Test Accs: [0.7418677859391396, 0.7384317840462523, 0.741662037322799, 0.7410036417505093, 0.7392959282348827, 0.7384317840462523, 0.739439952266321, 0.7407155936876324, 0.7396251260210275, 0.7388844310022015]
+Average val accuracy: 0.7513 ± 0.0009
+Average test accuracy: 0.7399 ± 0.0012
+Number of params: 1441580
 ```
-
-## Results
-
-Here are the results over at least 10 runs.
-
-|             Method              | Validation Accuracy |  Test Accuracy  | #Parameters |
-|:-------------------------------:|:-------------------:|:---------------:|:-----------:|
-|               GCN               |   0.7361 ± 0.0009   | 0.7246 ± 0.0021 |   109,608   |
-|           GCN+linear            |   0.7397 ± 0.0010   | 0.7270 ± 0.0016 |   218,152   |
-|           GCN+labels            |   0.7399 ± 0.0008   | 0.7259 ± 0.0006 |   119,848   |
-|        GCN+linear+labels        |   0.7442 ± 0.0012   | 0.7306 ± 0.0024 |   238,632   |
-|     GAT(norm. adj.)+labels      |   0.7508 ± 0.0009   | 0.7366 ± 0.0011 |  1,441,580  |
-|   GAT(norm. adj.)+label reuse   |   0.7516 ± 0.0008   | 0.7391 ± 0.0012 |  1,441,580  |
-| GAT(norm. adj.)+label reuse+C&S |   0.7519 ± 0.0008   | 0.7395 ± 0.0012 |  1,441,580  |

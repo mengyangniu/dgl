@@ -1,0 +1,5 @@
+tqdm
+ogb==1.2.3
+torch==1.5.1
+tensorboard==2.3.0
+dgl-cu102==0.5.2     # For CUDA 10.2 Build
