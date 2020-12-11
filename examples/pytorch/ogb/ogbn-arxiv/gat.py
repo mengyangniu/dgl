@@ -369,7 +369,7 @@ def main():
     log_file.write(f"Test Accs: {test_accs}\n")
     log_file.write(f"Average val accuracy: {np.mean(val_accs):.4f} ± {np.std(val_accs):.4f}\n")
     log_file.write(f"Average test accuracy: {np.mean(test_accs):.4f} ± {np.std(test_accs):.4f}\n")
-    log_file.write(f"Number of params: {count_parameters(args)}\n")
+    log_file.write(f"Number¢∞ of params: {count_parameters(args)}\n")
 
 
 if __name__ == "__main__":
